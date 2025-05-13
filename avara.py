@@ -1,6 +1,20 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 import math
+import os
+
+RESET = "\033[0m"
+RED = "\033[91m"
+GREEN = "\033[92m"
+YELLOW = "\033[93m"
+BLUE = "\033[94m"
+MAGENTA = "\033[95m"
+CYAN = "\033[96m"
+BOLD = "\033[1m"
+
+
+def limpiar_pantalla():
+    os.system('cls' if os.name == 'nt' else 'clear')
 
 # ----------------------------------
 # Funciones de lectura y graficación
@@ -432,15 +446,17 @@ def menu():
     ruta = r'grafo.txt'
     grafo, coords, root = leer_grafo_desde_archivo(ruta)
 
-    print("\n=== MENÚ DE BÚSQUEDAS ===")
-    print("1. Búsqueda en Anchura (BFS)")
-    print("2. Profundización Iterativa (IDDFS)")
-    print("3. Búsqueda Ávara")
-    print("4. Búsqueda en Profundidad")
-    print("5. Búsqueda de Costo Uniforme")
-    print("6. Búsqueda A*")
-    print("0. Salir")
-    opcion = input("Elige una opción: ")
+    print(f"\n{BOLD}{CYAN}=== MENÚ DE BÚSQUEDAS ==={RESET}")
+    print(f"{YELLOW}1.{RESET} {GREEN}Búsqueda en Anchura (BFS){RESET}")
+    print(f"{YELLOW}2.{RESET} {GREEN}Profundización Iterativa (IDDFS){RESET}")
+    print(f"{YELLOW}3.{RESET} {GREEN}Búsqueda Ávara{RESET}")
+    print(f"{YELLOW}4.{RESET} {GREEN}Búsqueda en Profundidad{RESET}")
+    print(f"{YELLOW}5.{RESET} {GREEN}Búsqueda de Costo Uniforme{RESET}")
+    print(f"{YELLOW}6.{RESET} {GREEN}Búsqueda A*{RESET}")
+    print(f"{YELLOW}0.{RESET} {RED}Salir{RESET}")
+    opcion = input(f"{BOLD}Elige una opción: {RESET}")
+
+
 
     camino, padres = None, None
 
@@ -499,7 +515,9 @@ def menu():
         print("No se encontró camino.")
 
     input("\nPresiona Enter para continuar...")
+    limpiar_pantalla()
     menu()
+
 
 if __name__ == '__main__':
     menu()
