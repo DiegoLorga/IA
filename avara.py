@@ -429,7 +429,7 @@ def validar_para(algoritmo, grafo, coords, meta):
 # ----------------------------------
 
 def menu():
-    ruta = r'grafo2.txt'
+    ruta = r'grafo.txt'
     grafo, coords, root = leer_grafo_desde_archivo(ruta)
 
     print("\n=== MENÚ DE BÚSQUEDAS ===")
@@ -445,51 +445,45 @@ def menu():
     camino, padres = None, None
 
     if opcion == '1':
-        while True:
-            meta = input("Nodo meta: ")
-            if not validar_para("BFS", grafo, coords, meta):
-                return menu()
+        meta = input("Nodo meta: ")
+        if not validar_para("BFS", grafo, coords, meta):
+            return menu()
         graficar_grafo(grafo, coords, root, meta)
         camino, padres = busquedaAmplitud(grafo, root, meta)
 
     elif opcion == '2':
-        while True:
-            meta = input("Nodo meta: ")
-            if not validar_para("IDDFS", grafo, coords, meta):
-                return menu()
+        meta = input("Nodo meta: ")
+        if not validar_para("IDDFS", grafo, coords, meta):
+            return menu()
         profundidad = int(input("Profundidad máxima [10]: ") or 10)
         graficar_grafo(grafo, coords, root, meta)
         camino, padres = busquedaProfundidadIterativa(grafo, root, meta, profundidad)
 
     elif opcion == '3':
-        while True:
-            meta = input("Nodo meta: ")
-            if not validar_para("Ávara", grafo, coords, meta):
-                return menu()
+        meta = input("Nodo meta: ")
+        if not validar_para("Ávara", grafo, coords, meta):
+            return menu()
         graficar_grafo(grafo, coords, root, meta)
         camino, padres = busquedaAvara(grafo, coords, root, meta)
 
     elif opcion == '4':
-        while True:
-            meta = input("Nodo meta: ")
-            if not validar_para("DFS", grafo, coords, meta):
-                return menu()
+        meta = input("Nodo meta: ")
+        if not validar_para("DFS", grafo, coords, meta):
+            return menu()
         graficar_grafo(grafo, coords, root, meta)
         camino, padres = busquedaProfundidad(grafo, root, meta)
 
     elif opcion == '5':
-        while True:
-            meta = input("Nodo meta: ")
-            if not validar_para("Costo Uniforme", grafo, coords, meta):
-                return menu()
+        meta = input("Nodo meta: ")
+        if not validar_para("Costo Uniforme", grafo, coords, meta):
+            return menu()
         graficar_grafo(grafo, coords, root, meta)
         camino, padres = busquedaCostoUniforme(grafo, root, meta)
 
     elif opcion == '6':
-        while True:
-            meta = input("Nodo meta: ")
-            if not validar_para("A*", grafo, coords, meta):
-                return menu()
+        meta = input("Nodo meta: ")
+        if not validar_para("A*", grafo, coords, meta):
+            return menu()
         graficar_grafo(grafo, coords, root, meta)
         camino, padres = busquedaAEstrella(grafo, coords, root, meta)
 
@@ -509,7 +503,3 @@ def menu():
 
 if __name__ == '__main__':
     menu()
-
-#HOLA AMOOOOOOR
-#ya quedo los algoritmos implementados, manda erro si el nodo noxiste y tambien si el algoitmo es incorrecto para ese grafo, solo flata que muestre el costo total 
-#pero igual peudes hacerr pruebas mi amor, cualqquieor cosa me depsiertas mi amor, te mo mucho princesa
