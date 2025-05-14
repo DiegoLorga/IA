@@ -210,23 +210,32 @@ def graficar_grafo_con_ruta(grafo, camino, coords=None, root=None, meta=None):
 # Búsquedas
 # ----------------------------------
 
-def busquedaAmplitud(grafo, nodo_inicio, nodo_meta):
-    """Búsqueda en anchura (BFS)."""
-    cola = [nodo_inicio]
-    padres = {nodo_inicio: None}
+def busquedaAmplitud(grafo, inicio, meta):
+    cola = [inicio]
+    padres = {inicio: None}
+    print("BFS pasos:")
+    
     while cola:
         actual = cola.pop(0)
-        if actual == nodo_meta:
-            camino=[]
-            while actual:
-                camino.insert(0,actual)
-                actual = padres[actual]
-            return camino, padres
-        for vecino,_ in grafo.get(actual,[]):
-            if vecino not in padres:
-                padres[vecino]=actual
-                cola.append(vecino)
-    return None, padres
+
+        camino_p = []
+        node = actual
+        while node is not None:
+            camino_p.insert(0, node)
+            node = padres[node]
+        print(" -> ".join(camino_p))
+
+        if actual == meta:
+            costo = len(camino_p) - 1  # Cada arista cuesta 1
+            return camino_p, costo, padres
+
+        for v, _ in grafo.get(actual, []):
+            if v not in padres:
+                padres[v] = actual
+                cola.append(v)
+    
+    return None, None, None
+
 
 
 def dfs_limitado(grafo, nodo_actual, objetivo, profundidad_max, visitados=None, camino=None, padres=None):
@@ -270,83 +279,51 @@ def busquedaProfundidadIterativa(grafo, inicio, meta, maxima_profundidad=10):
 
 
 def busquedaAvara(grafo, coords, inicio, meta):
-    """Búsqueda ávara (Greedy Best-First Search)."""
-    def h(n):
-        x1,y1 = coords[n]; x2,y2 = coords[meta]
-        return math.hypot(x2-x1, y2-y1)
-    abiertos = [(h(inicio), inicio)]
+    def heuristica(n):
+        if n in coords and meta in coords:
+            x1, y1 = coords[n]
+            x2, y2 = coords[meta]
+            return math.hypot(x2 - x1, y2 - y1)
+        return 0
+
+    nodos = [inicio]
     padres = {inicio: None}
     visitados = set()
-    while abiertos:
-        abiertos.sort(key=lambda x: x[0])
-        _, actual = abiertos.pop(0)
-        if actual == meta:
-            camino=[]
-            while actual:
-                camino.insert(0,actual)
-                actual = padres[actual]
-            return camino, padres
-        visitados.add(actual)
-        for vecino,_ in grafo.get(actual,[]):
-            if vecino in visitados or any(vecino==n for _,n in abiertos):
-                continue
-            padres[vecino]=actual
-            abiertos.append((h(vecino), vecino))
-    return None, padres
+    costo_total = {inicio: 0} 
 
-def busquedaProfundidad(grafo, inicio, meta):
-    """Búsqueda en profundidad normal (DFS recursiva)."""
-    visitados = set()
-    camino = []
-    padres = {inicio: None}
-
-    def dfs(u):
-        visitados.add(u)
-        camino.append(u)
-        if u == meta:
-            return True
-        for v,_ in grafo.get(u, []):
-            if v not in visitados:
-                padres[v] = u
-                if dfs(v):
-                    return True
-        camino.pop()
-        return False
-    if dfs(inicio):
-        return camino, padres
-    return None, padres
-
-def busquedaCostoUniforme(grafo, inicio, meta):
-    frontera = [(0, inicio)]
-    padres = {inicio: None}
-    costos = {inicio: 0}
-    visitados = set()
-
-    while frontera:
-        frontera.sort(key=lambda x: x[0])
-        costo_actual, nodo = frontera.pop(0)
-
-        if nodo in visitados:
-            continue
+    print("Avara pasos:")
+    while nodos:
+        print("Lista de nodos:", nodos)
+        nodo = nodos.pop(0) 
+        print("Expandimos:", nodo)
 
         if nodo == meta:
             camino = []
-            while nodo:
-                camino.insert(0, nodo)
-                nodo = padres[nodo]
-            print("\nCosto total del camino:", costo_actual)
-            return camino, padres
+            actual = meta
+            while actual is not None:
+                camino.insert(0, actual)
+                actual = padres[actual]
+            return camino, costo_total[meta], padres
 
         visitados.add(nodo)
-        for vecino, peso in grafo.get(nodo, []):
-            nuevo_costo = costo_actual + peso
-            if vecino not in costos or nuevo_costo < costos[vecino]:
-                costos[vecino] = nuevo_costo
-                padres[vecino] = nodo
-                if vecino not in visitados:
-                    frontera.append((nuevo_costo, vecino))
 
-    return None, padres
+        hijos = []
+        for hijo, peso in grafo.get(nodo, []):
+            if hijo not in visitados and hijo not in nodos:
+                padres[hijo] = nodo
+                costo_total[hijo] = costo_total[nodo] + peso
+                hijos.append(hijo)
+
+        hijos.sort(key=lambda x: heuristica(x))
+        print("Frontera:", hijos)
+
+        for hijo in hijos:
+            i = 0
+            while i < len(nodos) and heuristica(hijo) >= heuristica(nodos[i]):
+                i += 1
+            nodos.insert(i, hijo)
+
+    return None, None, None
 
 
 def busquedaAEstrella(grafo, coords, inicio, meta):
@@ -494,7 +471,7 @@ def menu():
         meta = input("Nodo meta: ")
         if not validar_para("BFS", grafo, coords, meta):
             return menu()
-        camino, padres = busquedaAmplitud(grafo, root, meta)
+        camino, costo, padres = busquedaAmplitud(grafo, root, meta)
 
     elif opcion == '2':
         meta = input("Nodo meta: ")
@@ -507,7 +484,7 @@ def menu():
         meta = input("Nodo meta: ")
         if not validar_para("Ávara", grafo, coords, meta):
             return menu()
-        camino, padres = busquedaAvara(grafo, coords, root, meta)
+        camino, costo, padres = busquedaAvara(grafo, coords, root, meta)
 
     elif opcion == '4':
         meta = input("Nodo meta: ")
@@ -534,6 +511,10 @@ def menu():
     if camino:
         graficar_grafo_con_ruta(grafo, camino, coords, root, meta)
         print("Camino encontrado: " + " -> ".join(camino))
+        if costo:
+            print("Costo", costo)
+        else:
+            print ("No se encntró costo")
     else:
         print("No se encontró camino.")
 
