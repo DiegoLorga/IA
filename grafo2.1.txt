@@ -1,0 +1,15 @@
+ROOT: A
+
+EDGES:
+A-B
+A-C
+B-D
+B-E
+C-F
+C-G
+D-H
+E-H
+F-I
+G-I
+H-J
+I-J

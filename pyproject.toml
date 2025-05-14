@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "algoritmosbusqueda"
+version = "0.1.0"
+description = "Algoritmos vistos en IA llevados a la práctica"
+authors = ["FridaMartinezLorenzo <117133767+FridaMartinezLorenzo@users.noreply.github.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+matplotlib = "^3.10.1"
+networkx = "^3.4.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
