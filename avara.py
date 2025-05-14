@@ -1,5 +1,7 @@
+#import subprocess
 import networkx as nx
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import math
 import os
 import heapq
@@ -71,7 +73,7 @@ def leer_grafo_desde_archivo(ruta):
     return grafo, coords
 
 
-def graficar_grafo(grafo, coords=None, root=None, meta=None, salida="grafo_inicial.png"):
+def graficar_grafo(grafo, coords=None, root=None, meta=None):
     G = nx.Graph()
     for u, vecinos in grafo.items():
         for v, w in vecinos:
@@ -79,9 +81,10 @@ def graficar_grafo(grafo, coords=None, root=None, meta=None, salida="grafo_inici
                 G.add_edge(u, v, weight=w)
 
     pos = coords if coords else nx.spring_layout(G)
-    plt.clf()
 
-    # Nodo root y meta
+    fig, ax = plt.subplots(figsize=(8, 6))
+    ax.clear()
+
     node_colors = []
     for n in G.nodes():
         if n == root:
@@ -91,19 +94,19 @@ def graficar_grafo(grafo, coords=None, root=None, meta=None, salida="grafo_inici
         else:
             node_colors.append('lightblue')
 
-    nx.draw_networkx_nodes(G, pos, node_color=node_colors, node_size=600)
-    nx.draw_networkx_labels(G, pos, font_size=10)
+    nx.draw_networkx_nodes(G, pos, node_color=node_colors, node_size=600, ax=ax)
+    nx.draw_networkx_labels(G, pos, font_size=10, ax=ax)
 
     if coords:
         offset = 0.15
         coord_labels = {n: f"({x:.1f}, {y:.1f})" for n, (x, y) in coords.items()}
         pos_coords = {n: (x, y - offset) for n, (x, y) in pos.items()}
-        nx.draw_networkx_labels(G, pos_coords, labels=coord_labels, font_size=8, font_color='gray')
+        nx.draw_networkx_labels(G, pos_coords, labels=coord_labels, font_size=8, font_color='gray', ax=ax)
 
-    nx.draw_networkx_edges(G, pos)
+    nx.draw_networkx_edges(G, pos, ax=ax)
     peso = nx.get_edge_attributes(G, 'weight')
     if any(w != 1.0 for w in peso.values()):
-        nx.draw_networkx_edge_labels(G, pos, edge_labels=peso)
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=peso, ax=ax)
 
     title = "Grafo"
     if coords:
@@ -112,17 +115,13 @@ def graficar_grafo(grafo, coords=None, root=None, meta=None, salida="grafo_inici
         title += " y Pesos"
     if root:
         title += f" (Raíz: {root})"
+    ax.set_title(title)
+    ax.axis('off')
 
-    plt.title(title)
-    plt.axis('off')
-    plt.tight_layout()
-    plt.savefig(salida, format='png', dpi=300)
-    plt.close()
+    mostrar_imagen_en_tkinter(fig, titulo=title)
+
     
 def graficar_grafo_con_ruta(grafo, camino, coords=None, root=None, meta=None):
-    """
-    Dibuja el grafo y resalta la ruta encontrada.
-    """
     G = nx.Graph()
     for u, vecinos in grafo.items():
         for v, w in vecinos:
@@ -131,7 +130,9 @@ def graficar_grafo_con_ruta(grafo, camino, coords=None, root=None, meta=None):
 
     pos = coords if coords else nx.spring_layout(G)
 
-    # Preparar colores para nodos
+    fig, ax = plt.subplots(figsize=(8, 6))
+    ax.clear()
+
     node_colors = []
     for n in G.nodes():
         if n == root:
@@ -143,7 +144,6 @@ def graficar_grafo_con_ruta(grafo, camino, coords=None, root=None, meta=None):
         else:
             node_colors.append('lightblue')
 
-    # Aristas en la ruta
     edges_resaltadas = []
     if camino:
         for i in range(len(camino) - 1):
@@ -151,34 +151,34 @@ def graficar_grafo_con_ruta(grafo, camino, coords=None, root=None, meta=None):
             if G.has_edge(a, b):
                 edges_resaltadas.append((a, b))
 
-    plt.figure()
-    nx.draw_networkx_nodes(G, pos, node_color=node_colors, node_size=600)
-    nx.draw_networkx_labels(G, pos, font_size=10)
+    nx.draw_networkx_nodes(G, pos, node_color=node_colors, node_size=600, ax=ax)
+    nx.draw_networkx_labels(G, pos, font_size=10, ax=ax)
 
-    # Coordenadas debajo del nodo si hay
     if coords:
         offset = 0.15
         coord_labels = {n: f"({x:.1f}, {y:.1f})" for n, (x, y) in coords.items()}
         pos_coords = {n: (x, y - offset) for n, (x, y) in pos.items()}
-        nx.draw_networkx_labels(G, pos_coords, labels=coord_labels, font_size=8, font_color='gray')
+        nx.draw_networkx_labels(G, pos_coords, labels=coord_labels, font_size=8, font_color='gray', ax=ax)
 
-    # Dibujar aristas normales
-    nx.draw_networkx_edges(G, pos, alpha=0.4)
-    
-    # Dibujar la ruta resaltada
-    nx.draw_networkx_edges(G, pos, edgelist=edges_resaltadas, edge_color='blue', width=2.5)
+    nx.draw_networkx_edges(G, pos, alpha=0.4, ax=ax)
+    nx.draw_networkx_edges(G, pos, edgelist=edges_resaltadas, edge_color='blue', width=2.5, ax=ax)
 
-    # Mostrar pesos si hay
     pesos = nx.get_edge_attributes(G, 'weight')
     if any(w != 1.0 for w in pesos.values()):
-        nx.draw_networkx_edge_labels(G, pos, edge_labels=pesos)
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=pesos, ax=ax)
 
-    plt.title("Ruta encontrada sobre el grafo")
-    plt.axis('off')
-    plt.tight_layout()
-    #plt.show()
-    plt.savefig("grafo_final.png", format='png', dpi=300)
-    plt.close()    
+    ax.set_title("Ruta encontrada sobre el grafo")
+    ax.axis('off')
+
+    mostrar_imagen_en_tkinter(fig, titulo="Ruta encontrada")
+
+
+def mostrar_imagen_en_tkinter(fig, titulo="Visualización del grafo"):
+    ventana = tk.Toplevel()
+    ventana.title(titulo)
+    canvas = FigureCanvasTkAgg(fig, master=ventana)
+    canvas.draw()
+    canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
 
 
@@ -256,6 +256,37 @@ def dfs_limitado(grafo, nodo_actual, objetivo, profundidad_max, visitados=None, 
     camino.pop()
     visitados.remove(nodo_actual)
     return None, padres, None
+
+def busquedaProfundidad(grafo, nodo_inicio, nodo_meta):
+    nodos = [nodo_inicio]  # Pila (modo LIFO)
+    padres = {nodo_inicio: None} 
+
+    while nodos:
+        print("Nodos: ", nodos)
+        nodo = nodos.pop(0)
+        print("Nodo: ", nodo)
+
+        if nodo == nodo_meta:
+            # Construir camino
+            camino = []
+            actual = nodo_meta
+            while actual is not None:
+                camino.insert(0, actual)
+                actual = padres[actual]
+            costo = len(camino) - 1  
+            return camino, costo, padres
+
+        # Expandir
+        for hijo in reversed([h for h, _ in grafo.get(nodo, [])]):
+            print("hijo:", hijo)
+            if padres[nodo] is not None and hijo == padres[nodo]:
+                continue  
+            if hijo not in padres:
+                padres[hijo] = nodo
+                nodos.insert(0, hijo)
+
+    return None, None, None 
+
 
 
 def busquedaProfundidadIterativa(grafo, inicio, meta, maxima_profundidad=10):
@@ -482,6 +513,7 @@ def menu():
     root = input("Nodo raíz: ")
     meta = input("Nodo meta: ")
     graficar_grafo(grafo, coords)
+    #subprocess.run(["xdg-open", "grafo_inicial.png"])
 
     print(f"\n{BOLD}{CYAN}=== MENÚ DE BÚSQUEDAS ==={RESET}")
     print(f"{YELLOW}1.{RESET} {GREEN}Búsqueda en Anchura (BFS){RESET}")
@@ -516,7 +548,7 @@ def menu():
     elif opcion == '4':
         if not validar_para("DFS", grafo, coords, meta):
             return menu()
-        camino, padres = busquedaProfundidad(grafo, root, meta)
+        camino, costo, padres = busquedaProfundidad(grafo, root, meta)
 
     elif opcion == '5':
         if not validar_para("Costo Uniforme", grafo, coords, meta):
@@ -534,6 +566,7 @@ def menu():
 
     if camino:
         graficar_grafo_con_ruta(grafo, camino, coords, root, meta)
+        #subprocess.run(["xdg-open", "grafo_final.png"])
         print("Camino encontrado: " + " -> ".join(camino))
         if costo:
             print("Costo", costo)
