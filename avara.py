@@ -1,3 +1,5 @@
+import subprocess
+from time import sleep
 import networkx as nx
 import matplotlib.pyplot as plt
 import math
@@ -257,6 +259,37 @@ def dfs_limitado(grafo, nodo_actual, objetivo, profundidad_max, visitados=None, 
     visitados.remove(nodo_actual)
     return None, padres, None
 
+def busquedaProfundidad(grafo, nodo_inicio, nodo_meta):
+    nodos = [nodo_inicio]  # Pila (modo LIFO)
+    padres = {nodo_inicio: None} 
+
+    while nodos:
+        print("Nodos: ", nodos)
+        nodo = nodos.pop(0)
+        print("Nodo: ", nodo)
+
+        if nodo == nodo_meta:
+            # Construir camino
+            camino = []
+            actual = nodo_meta
+            while actual is not None:
+                camino.insert(0, actual)
+                actual = padres[actual]
+            costo = len(camino) - 1  
+            return camino, costo, padres
+
+        # Expandir
+        for hijo in reversed([h for h, _ in grafo.get(nodo, [])]):
+            print("hijo:", hijo)
+            if padres[nodo] is not None and hijo == padres[nodo]:
+                continue  
+            if hijo not in padres:
+                padres[hijo] = nodo
+                nodos.insert(0, hijo)
+
+    return None, None, None 
+
+
 
 def busquedaProfundidadIterativa(grafo, inicio, meta, maxima_profundidad=10):
     """Búsqueda por profundización iterativa (IDDFS).
@@ -481,6 +514,7 @@ def menu():
     grafo, coords= leer_grafo_desde_archivo(archivo_seleccionado)
     root = input("Nodo raíz: ")
     graficar_grafo(grafo, coords)
+    subprocess.run(["xdg-open", "grafo_inicial.png"])
 
     print(f"\n{BOLD}{CYAN}=== MENÚ DE BÚSQUEDAS ==={RESET}")
     print(f"{YELLOW}1.{RESET} {GREEN}Búsqueda en Anchura (BFS){RESET}")
@@ -519,7 +553,7 @@ def menu():
         meta = input("Nodo meta: ")
         if not validar_para("DFS", grafo, coords, meta):
             return menu()
-        camino, padres = busquedaProfundidad(grafo, root, meta)
+        camino, costo, padres = busquedaProfundidad(grafo, root, meta)
 
     elif opcion == '5':
         meta = input("Nodo meta: ")
@@ -539,6 +573,7 @@ def menu():
 
     if camino:
         graficar_grafo_con_ruta(grafo, camino, coords, root, meta)
+        subprocess.run(["xdg-open", "grafo_final.png"])
         print("Camino encontrado: " + " -> ".join(camino))
         if costo:
             print("Costo", costo)
