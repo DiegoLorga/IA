@@ -1,4 +1,4 @@
-ROOT: A
+ROOT: A 
 
 EDGES:
 A-B

@@ -2,6 +2,11 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import math
 import os
+import heapq
+import tkinter as tk
+from tkinter import filedialog
+import tkinter as tk
+from tkinter import filedialog, messagebox
 
 RESET = "\033[0m"
 RED = "\033[91m"
@@ -132,52 +137,11 @@ def graficar_grafo(grafo, coords=None, root=None, meta=None):
     plt.title(title)
     plt.axis('off')
     plt.tight_layout()
-    plt.show()
-
-def graficar_arbol_exploracion(padres, coords=None, root=None, meta=None):
-    """
-    Dibuja el árbol de exploración generado por un algoritmo de búsqueda.
-    - Usa colores distintos para la raíz y el nodo meta.
-    - Muestra coordenadas si están disponibles.
-    - Muestra pesos si los padres fueron derivados de un grafo con pesos.
-    """
-    G = nx.DiGraph()
-    for hijo, padre in padres.items():
-        if padre is not None:
-            G.add_edge(padre, hijo)
-
-    # Posiciones
-    pos = coords if coords else nx.spring_layout(G)
-
-    # Colores de nodos
-    colors = []
-    for n in G.nodes():
-        if n == root:
-            colors.append('red')
-        elif n == meta:
-            colors.append('green')
-        else:
-            colors.append('lightblue')
-
-    # Dibujar nodos y etiquetas
-    plt.figure()
-    nx.draw_networkx_nodes(G, pos, node_color=colors, node_size=600)
-    nx.draw_networkx_labels(G, pos, font_size=10)
-
-    # Coordenadas debajo del nodo
-    if coords:
-        offset = 0.15
-        coord_labels = {n: f"({x:.1f}, {y:.1f})" for n, (x, y) in coords.items()}
-        pos_coords = {n: (x, y - offset) for n, (x, y) in pos.items()}
-        nx.draw_networkx_labels(G, pos_coords, labels=coord_labels, font_size=8, font_color='gray')
-
-    # Dibujar aristas
-    nx.draw_networkx_edges(G, pos, arrows=True)
-
-    plt.title("Árbol de exploración (Raíz en rojo, Meta en verde)")
-    plt.axis('off')
-    plt.tight_layout()
-    plt.show()
+    #plt.show()
+    
+    # Guardar en archivo
+    plt.savefig("grafo_Inicial.png", format='png', dpi=300)
+    plt.close()
 
 def graficar_grafo_con_ruta(grafo, camino, coords=None, root=None, meta=None):
     """
@@ -236,7 +200,9 @@ def graficar_grafo_con_ruta(grafo, camino, coords=None, root=None, meta=None):
     plt.title("Ruta encontrada sobre el grafo")
     plt.axis('off')
     plt.tight_layout()
-    plt.show()
+    #plt.show()
+    plt.savefig("grafo_final.png", format='png', dpi=300)
+    plt.close()    
 
 
 
@@ -442,9 +408,61 @@ def validar_para(algoritmo, grafo, coords, meta):
 # Menú interactivo
 # ----------------------------------
 
+#funciones para mostrar ventana para seleccionar archivo
+def seleccionar_archivo():
+    global archivo_seleccionado
+    ruta = filedialog.askopenfilename(
+        title="Seleccionar archivo de grafo",
+        filetypes=[("Archivos de texto", "*.txt")]
+    )
+    if ruta:
+        archivo_seleccionado = ruta
+        label_archivo.config(text=f"Archivo seleccionado:\n{ruta}")
+
+def confirmar_y_cerrar(ventana):
+    if archivo_seleccionado:
+        ventana.destroy()
+    else:
+        messagebox.showwarning("Advertencia", "Por favor selecciona un archivo antes de confirmar.")
+
+def ventana_seleccion():
+    ventana = tk.Tk()
+    ventana.title("Cargar archivo de grafo")
+
+    ancho = 500
+    alto = 200
+    pantalla_ancho = ventana.winfo_screenwidth()
+    pantalla_alto = ventana.winfo_screenheight()
+    x = (pantalla_ancho // 2) - (ancho // 2)
+    y = (pantalla_alto // 2) - (alto // 2)
+    ventana.geometry(f"{ancho}x{alto}+{x}+{y}")
+
+    global label_archivo
+    label_archivo = tk.Label(ventana, text="Ningún archivo seleccionado", wraplength=480)
+    label_archivo.pack(pady=10)
+
+    btn_seleccionar = tk.Button(ventana, text="Seleccionar archivo", command=seleccionar_archivo)
+    btn_seleccionar.pack(pady=5)
+
+    btn_confirmar = tk.Button(ventana, text="Confirmar", command=lambda: confirmar_y_cerrar(ventana))
+    btn_confirmar.pack(pady=5)
+
+    ventana.mainloop()
+
 def menu():
-    ruta = r'grafo.txt'
-    grafo, coords, root = leer_grafo_desde_archivo(ruta)
+    global archivo_seleccionado
+    # Mostrar ventana gráfica de selección
+    ventana_seleccion()
+
+    # Si no se seleccionó archivo, terminar
+    if not archivo_seleccionado:
+        print("No se seleccionó ningún archivo. Saliendo.")
+        return
+
+    # Leer grafo desde el archivo seleccionado
+    grafo, coords, root = leer_grafo_desde_archivo(archivo_seleccionado)
+
+    graficar_grafo(grafo, coords)
 
     print(f"\n{BOLD}{CYAN}=== MENÚ DE BÚSQUEDAS ==={RESET}")
     print(f"{YELLOW}1.{RESET} {GREEN}Búsqueda en Anchura (BFS){RESET}")
@@ -464,7 +482,6 @@ def menu():
         meta = input("Nodo meta: ")
         if not validar_para("BFS", grafo, coords, meta):
             return menu()
-        graficar_grafo(grafo, coords, root, meta)
         camino, padres = busquedaAmplitud(grafo, root, meta)
 
     elif opcion == '2':
@@ -472,35 +489,30 @@ def menu():
         if not validar_para("IDDFS", grafo, coords, meta):
             return menu()
         profundidad = int(input("Profundidad máxima [10]: ") or 10)
-        graficar_grafo(grafo, coords, root, meta)
         camino, padres = busquedaProfundidadIterativa(grafo, root, meta, profundidad)
 
     elif opcion == '3':
         meta = input("Nodo meta: ")
         if not validar_para("Ávara", grafo, coords, meta):
             return menu()
-        graficar_grafo(grafo, coords, root, meta)
         camino, padres = busquedaAvara(grafo, coords, root, meta)
 
     elif opcion == '4':
         meta = input("Nodo meta: ")
         if not validar_para("DFS", grafo, coords, meta):
             return menu()
-        graficar_grafo(grafo, coords, root, meta)
         camino, padres = busquedaProfundidad(grafo, root, meta)
 
     elif opcion == '5':
         meta = input("Nodo meta: ")
         if not validar_para("Costo Uniforme", grafo, coords, meta):
             return menu()
-        graficar_grafo(grafo, coords, root, meta)
         camino, padres = busquedaCostoUniforme(grafo, root, meta)
 
     elif opcion == '6':
         meta = input("Nodo meta: ")
         if not validar_para("A*", grafo, coords, meta):
             return menu()
-        graficar_grafo(grafo, coords, root, meta)
         camino, padres = busquedaAEstrella(grafo, coords, root, meta)
 
     else:
@@ -508,7 +520,6 @@ def menu():
         return
 
     if camino:
-        graficar_arbol_exploracion(padres, coords, root, meta)
         graficar_grafo_con_ruta(grafo, camino, coords, root, meta)
         print("Camino encontrado: " + " -> ".join(camino))
     else:
