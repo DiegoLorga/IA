@@ -480,6 +480,7 @@ def menu():
     # Leer grafo desde el archivo seleccionado
     grafo, coords= leer_grafo_desde_archivo(archivo_seleccionado)
     root = input("Nodo raíz: ")
+    meta = input("Nodo meta: ")
     graficar_grafo(grafo, coords)
 
     print(f"\n{BOLD}{CYAN}=== MENÚ DE BÚSQUEDAS ==={RESET}")
@@ -497,38 +498,32 @@ def menu():
     camino, padres = None, None
 
     if opcion == '1':
-        meta = input("Nodo meta: ")
         if not validar_para("BFS", grafo, coords, meta):
             return menu()
         camino, costo, padres = busquedaAmplitud(grafo, root, meta)
 
     elif opcion == '2':
-        meta = input("Nodo meta: ")
         if not validar_para("IDDFS", grafo, coords, meta):
             return menu()
         profundidad = int(input("Profundidad máxima [10]: ") or 10)
         camino, padres, costo = busquedaProfundidadIterativa(grafo, root, meta, profundidad)
         costo= len(costo)-2
     elif opcion == '3':
-        meta = input("Nodo meta: ")
         if not validar_para("Ávara", grafo, coords, meta):
             return menu()
         camino, costo, padres = busquedaAvara(grafo, coords, root, meta)
 
     elif opcion == '4':
-        meta = input("Nodo meta: ")
         if not validar_para("DFS", grafo, coords, meta):
             return menu()
         camino, padres = busquedaProfundidad(grafo, root, meta)
 
     elif opcion == '5':
-        meta = input("Nodo meta: ")
         if not validar_para("Costo Uniforme", grafo, coords, meta):
             return menu()
         camino, costo, padres = busquedaCostoUniforme(grafo, root, meta)
 
     elif opcion == '6':
-        meta = input("Nodo meta: ")
         if not validar_para("A*", grafo, coords, meta):
             return menu()
         camino, costo, padres = busquedaAEstrella(grafo, coords, root, meta)
