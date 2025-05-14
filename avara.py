@@ -321,6 +321,39 @@ def busquedaAvara(grafo, coords, inicio, meta):
 
     return None, None, None
 
+def busquedaCostoUniforme(grafo, inicio, meta):
+    frontera = [(0, inicio)]
+    padres = {inicio: None}
+    costos = {inicio: 0}
+    visitados = set()
+
+    while frontera:
+        frontera.sort(key=lambda x: x[0])
+        costo_actual, nodo = frontera.pop(0)
+
+        if nodo in visitados:
+            continue
+
+        if nodo == meta:
+            camino = []
+            while nodo:
+                camino.insert(0, nodo)
+                nodo = padres[nodo]
+            print("\nCosto total del camino:", costo_actual)
+            return camino, costo_actual, padres  # ✅ aquí se retorna costo_actual también
+
+        visitados.add(nodo)
+        for vecino, peso in grafo.get(nodo, []):
+            nuevo_costo = costo_actual + peso
+            if vecino not in costos or nuevo_costo < costos[vecino]:
+                costos[vecino] = nuevo_costo
+                padres[vecino] = nodo
+                if vecino not in visitados:
+                    frontera.append((nuevo_costo, vecino))
+
+    return None, None, padres  # si no se encontró camino
+
+
 
 def busquedaAEstrella(grafo, coords, inicio, meta):
     def h(n):
@@ -358,7 +391,7 @@ def busquedaAEstrella(grafo, coords, inicio, meta):
             for fila in tabla:
                 print(f"{fila[0]:<8}{fila[1]:<8}{fila[2]:<8}{fila[3]:<8}")
             print("Costo total del camino:", costos[meta])
-            return camino, padres
+            return camino, costos[meta], padres  # ✅ devuelve costo
 
         visitados.add(nodo)
 
@@ -370,7 +403,7 @@ def busquedaAEstrella(grafo, coords, inicio, meta):
                 if vecino not in visitados:
                     frontera.append((nuevo_costo, vecino))
 
-    return None, padres
+    return None, None, padres
 
 
 def validar_para(algoritmo, grafo, coords, meta):
@@ -492,13 +525,13 @@ def menu():
         meta = input("Nodo meta: ")
         if not validar_para("Costo Uniforme", grafo, coords, meta):
             return menu()
-        camino, padres = busquedaCostoUniforme(grafo, root, meta)
+        camino, costo, padres = busquedaCostoUniforme(grafo, root, meta)
 
     elif opcion == '6':
         meta = input("Nodo meta: ")
         if not validar_para("A*", grafo, coords, meta):
             return menu()
-        camino, padres = busquedaAEstrella(grafo, coords, root, meta)
+        camino, costo, padres = busquedaAEstrella(grafo, coords, root, meta)
 
     else:
         print("Saliendo...")
