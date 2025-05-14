@@ -27,122 +27,98 @@ def limpiar_pantalla():
 
 def leer_grafo_desde_archivo(ruta):
     """
-    Lee un archivo de texto con tres posibles secciones:
-    1) ROOT: NodoRaiz
-    2) NODE_COORDS: (opcional)
+    Lee un archivo de texto con dos posibles secciones:
+    1) NODE_COORDS: (opcional)
        Nodo: (x, y)
-    3) EDGES:
+    2) EDGES:
        - Con peso: NodoA-NodoB: peso
        - Sin peso: NodoA-NodoB
 
     Devuelve:
     - grafo: dict nodo -> lista de (vecino, peso)
     - coords: dict nodo -> (x, y)
-    - root: nodo raíz
     """
     grafo, coords = {}, {}
-    root, seccion = None, None
+    seccion = None
 
     with open(ruta, 'r') as archivo:
         for linea in archivo:
             linea = linea.strip()
-            if not linea or linea.startswith('#'): continue
-
-            if linea.upper().startswith('ROOT:'):
-                root = linea.split(':',1)[1].strip()
+            if not linea or linea.startswith('#'): 
                 continue
+
             encabezado = linea.rstrip(':').upper()
-            if encabezado == 'NODE_COORDS': seccion = 'coords'; continue
-            if encabezado == 'EDGES': seccion = 'edges'; continue
+            if encabezado == 'NODE_COORDS':
+                seccion = 'coords'
+                continue
+            if encabezado == 'EDGES':
+                seccion = 'edges'
+                continue
 
             if seccion == 'coords':
-                nodo, tup = linea.split(':',1)
-                x,y = tup.strip().lstrip('(').rstrip(')').split(',')
+                nodo, tup = linea.split(':', 1)
+                x, y = tup.strip().lstrip('(').rstrip(')').split(',')
                 coords[nodo.strip()] = (float(x), float(y))
             elif seccion == 'edges':
                 if ':' in linea:
-                    arista, peso = linea.split(':',1)
+                    arista, peso = linea.split(':', 1)
                     w = float(peso)
                 else:
                     arista, w = linea, 1.0
-                a,b = [n.strip() for n in arista.split('-')]
-                grafo.setdefault(a,[]).append((b,w))
-                grafo.setdefault(b,[]).append((a,w))
-
-    if root is None:
-        raise ValueError("Debe especificar ROOT: <Nodo>")
-    return grafo, coords, root
+                a, b = [n.strip() for n in arista.split('-')]
+                grafo.setdefault(a, []).append((b, w))
+                grafo.setdefault(b, []).append((a, w))
+    return grafo, coords
 
 
-def graficar_grafo(grafo, coords=None, root=None, meta=None):
-
-    """
-    Dibuja el grafo con:
-    - Nodo raíz resaltado.
-    - Pesos si existen.
-    - Coordenadas si existen (mostradas debajo del nodo).
-    """
-
+def graficar_grafo(grafo, coords=None, root=None, meta=None, salida="grafo_inicial.png"):
     G = nx.Graph()
     for u, vecinos in grafo.items():
         for v, w in vecinos:
             if not G.has_edge(u, v):
                 G.add_edge(u, v, weight=w)
 
-    # Usar coordenadas si existen, si no usar spring layout
     pos = coords if coords else nx.spring_layout(G)
-
     plt.clf()
-    colors = []
+
+    # Nodo root y meta
+    node_colors = []
     for n in G.nodes():
         if n == root:
-            colors.append('red')
+            node_colors.append('red')
         elif n == meta:
-            colors.append('green')
+            node_colors.append('green')
         else:
-            colors.append('lightblue')
+            node_colors.append('lightblue')
 
-    nx.draw_networkx_nodes(G, pos, node_color=colors, node_size=600)
-
-    # Mostrar solo nombre del nodo en su centro
+    nx.draw_networkx_nodes(G, pos, node_color=node_colors, node_size=600)
     nx.draw_networkx_labels(G, pos, font_size=10)
 
-    # Mostrar coordenadas debajo del nodo
     if coords:
-        offset = 0.15  # separación vertical hacia abajo
-        coord_labels = {
-            n: f"({x:.1f}, {y:.1f})"
-            for n, (x, y) in coords.items()
-        }
-        pos_coords = {
-            n: (x, y - offset)
-            for n, (x, y) in pos.items()
-        }
+        offset = 0.15
+        coord_labels = {n: f"({x:.1f}, {y:.1f})" for n, (x, y) in coords.items()}
+        pos_coords = {n: (x, y - offset) for n, (x, y) in pos.items()}
         nx.draw_networkx_labels(G, pos_coords, labels=coord_labels, font_size=8, font_color='gray')
 
-    # Dibujar aristas y pesos si los hay
     nx.draw_networkx_edges(G, pos)
     peso = nx.get_edge_attributes(G, 'weight')
     if any(w != 1.0 for w in peso.values()):
         nx.draw_networkx_edge_labels(G, pos, edge_labels=peso)
 
-    # Título dinámico
     title = "Grafo"
     if coords:
         title += " con Coordenadas"
     if any(w != 1.0 for w in peso.values()):
         title += " y Pesos"
-    title += f" (Raíz: {root})"
+    if root:
+        title += f" (Raíz: {root})"
 
     plt.title(title)
     plt.axis('off')
     plt.tight_layout()
-    #plt.show()
-    
-    # Guardar en archivo
-    plt.savefig("grafo_Inicial.png", format='png', dpi=300)
+    plt.savefig(salida, format='png', dpi=300)
     plt.close()
-
+    
 def graficar_grafo_con_ruta(grafo, camino, coords=None, root=None, meta=None):
     """
     Dibuja el grafo y resalta la ruta encontrada.
@@ -238,44 +214,64 @@ def busquedaAmplitud(grafo, inicio, meta):
 
 
 
+
 def dfs_limitado(grafo, nodo_actual, objetivo, profundidad_max, visitados=None, camino=None, padres=None):
     """
-    DFS limitada para IDDFS.
+    DFS limitada para IDDFS, retorna camino, padres y costo (# aristas).
     """
     if padres is None:
         padres = {}
-
     if visitados is None:
         visitados = set()
     if camino is None:
         camino = []
+
+    # Marcamos y agregamos al camino
     visitados.add(nodo_actual)
     camino.append(nodo_actual)
+
+    # Verificar objetivo
     if nodo_actual == objetivo:
-        return list(camino), padres
+        costo = len(camino) - 1
+        return list(camino), padres, costo
+
+    # Si alcanzamos profundidad máxima
     if profundidad_max <= 0:
         camino.pop()
         visitados.remove(nodo_actual)
-        return None, padres
-    for vecino,_ in grafo.get(nodo_actual, []):
+        return None, padres, None
+
+    # Explorar vecinos
+    for vecino, _ in grafo.get(nodo_actual, []):
         if vecino not in visitados:
             padres[vecino] = nodo_actual
-            resultado, padres = dfs_limitado(grafo, vecino, objetivo, profundidad_max-1, visitados, camino, padres)
+            resultado, padres, costo = dfs_limitado(
+                grafo, vecino, objetivo, profundidad_max - 1,
+                visitados, camino, padres
+            )
             if resultado:
-                return resultado, padres
+                return resultado, padres, costo
+
+    # Backtrack
     camino.pop()
     visitados.remove(nodo_actual)
-    return None, padres
+    return None, padres, None
 
 
 def busquedaProfundidadIterativa(grafo, inicio, meta, maxima_profundidad=10):
-    """Búsqueda por profundización iterativa (IDDFS)."""
-    for limite in range(maxima_profundidad+1):
+    """Búsqueda por profundización iterativa (IDDFS).
+    Retorna camino, costo (# aristas) y padres, o (None, None, {}) si no se encuentra."""
+    for limite in range(maxima_profundidad + 1):
         print(f"Intentando IDDFS con límite={limite}")
-        resultado, padres = dfs_limitado(grafo, inicio, meta, limite)
+        resultado, padres, costo = dfs_limitado(
+            grafo, inicio, meta, limite
+        )
         if resultado:
-            return resultado, padres
-    return None, {}
+            print(f"Meta encontrada con costo {costo}")
+            return resultado, costo, padres
+    print("No se encontró la meta dentro del límite dado.")
+    return None, None, {}
+
 
 
 def busquedaAvara(grafo, coords, inicio, meta):
@@ -449,8 +445,8 @@ def menu():
         return
 
     # Leer grafo desde el archivo seleccionado
-    grafo, coords, root = leer_grafo_desde_archivo(archivo_seleccionado)
-
+    grafo, coords= leer_grafo_desde_archivo(archivo_seleccionado)
+    root = input("Nodo raíz: ")
     graficar_grafo(grafo, coords)
 
     print(f"\n{BOLD}{CYAN}=== MENÚ DE BÚSQUEDAS ==={RESET}")
@@ -478,8 +474,8 @@ def menu():
         if not validar_para("IDDFS", grafo, coords, meta):
             return menu()
         profundidad = int(input("Profundidad máxima [10]: ") or 10)
-        camino, padres = busquedaProfundidadIterativa(grafo, root, meta, profundidad)
-
+        camino, padres, costo = busquedaProfundidadIterativa(grafo, root, meta, profundidad)
+        costo= len(costo)-2
     elif opcion == '3':
         meta = input("Nodo meta: ")
         if not validar_para("Ávara", grafo, coords, meta):
