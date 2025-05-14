@@ -1,0 +1,26 @@
+ROOT: Arad
+
+EDGES:
+Arad-Timisoara
+Arad-Sibiu
+Arad-Zerind
+Timisoara-Lugoj
+Sibiu-Rimnicu Vilcea
+Sibiu-Fagaras
+Sibiu-Oradea
+Zerind-Oradea
+Lugoj-Mehadia
+Mehadia-Dobreta
+Rimnicu Vilcea-Craiova
+Rimnicu Vilcea-Pitesti
+Fagaras-Bucharest
+Pitesti-Bucharest
+Craiova-Dobreta
+Craiova-Pitesti
+Bucharest-Giurgiu
+Bucharest-Urziceni
+Urziceni-Hirsova
+Hirsova-Eforie
+Urziceni-Vaslui
+Vaslui-Lasi
+Lasi-Heamt

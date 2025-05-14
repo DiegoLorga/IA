@@ -134,51 +134,6 @@ def graficar_grafo(grafo, coords=None, root=None, meta=None):
     plt.tight_layout()
     plt.show()
 
-def graficar_arbol_exploracion(padres, coords=None, root=None, meta=None):
-    """
-    Dibuja el árbol de exploración generado por un algoritmo de búsqueda.
-    - Usa colores distintos para la raíz y el nodo meta.
-    - Muestra coordenadas si están disponibles.
-    - Muestra pesos si los padres fueron derivados de un grafo con pesos.
-    """
-    G = nx.DiGraph()
-    for hijo, padre in padres.items():
-        if padre is not None:
-            G.add_edge(padre, hijo)
-
-    # Posiciones
-    pos = coords if coords else nx.spring_layout(G)
-
-    # Colores de nodos
-    colors = []
-    for n in G.nodes():
-        if n == root:
-            colors.append('red')
-        elif n == meta:
-            colors.append('green')
-        else:
-            colors.append('lightblue')
-
-    # Dibujar nodos y etiquetas
-    plt.figure()
-    nx.draw_networkx_nodes(G, pos, node_color=colors, node_size=600)
-    nx.draw_networkx_labels(G, pos, font_size=10)
-
-    # Coordenadas debajo del nodo
-    if coords:
-        offset = 0.15
-        coord_labels = {n: f"({x:.1f}, {y:.1f})" for n, (x, y) in coords.items()}
-        pos_coords = {n: (x, y - offset) for n, (x, y) in pos.items()}
-        nx.draw_networkx_labels(G, pos_coords, labels=coord_labels, font_size=8, font_color='gray')
-
-    # Dibujar aristas
-    nx.draw_networkx_edges(G, pos, arrows=True)
-
-    plt.title("Árbol de exploración (Raíz en rojo, Meta en verde)")
-    plt.axis('off')
-    plt.tight_layout()
-    plt.show()
-
 def graficar_grafo_con_ruta(grafo, camino, coords=None, root=None, meta=None):
     """
     Dibuja el grafo y resalta la ruta encontrada.
@@ -443,8 +398,10 @@ def validar_para(algoritmo, grafo, coords, meta):
 # ----------------------------------
 
 def menu():
-    ruta = r'grafo.txt'
+    ruta = r'rumania.txt'
     grafo, coords, root = leer_grafo_desde_archivo(ruta)
+
+    graficar_grafo(grafo, coords)
 
     print(f"\n{BOLD}{CYAN}=== MENÚ DE BÚSQUEDAS ==={RESET}")
     print(f"{YELLOW}1.{RESET} {GREEN}Búsqueda en Anchura (BFS){RESET}")
@@ -464,7 +421,6 @@ def menu():
         meta = input("Nodo meta: ")
         if not validar_para("BFS", grafo, coords, meta):
             return menu()
-        graficar_grafo(grafo, coords, root, meta)
         camino, padres = busquedaAmplitud(grafo, root, meta)
 
     elif opcion == '2':
@@ -472,35 +428,31 @@ def menu():
         if not validar_para("IDDFS", grafo, coords, meta):
             return menu()
         profundidad = int(input("Profundidad máxima [10]: ") or 10)
-        graficar_grafo(grafo, coords, root, meta)
         camino, padres = busquedaProfundidadIterativa(grafo, root, meta, profundidad)
 
     elif opcion == '3':
         meta = input("Nodo meta: ")
         if not validar_para("Ávara", grafo, coords, meta):
             return menu()
-        graficar_grafo(grafo, coords, root, meta)
         camino, padres = busquedaAvara(grafo, coords, root, meta)
 
     elif opcion == '4':
         meta = input("Nodo meta: ")
         if not validar_para("DFS", grafo, coords, meta):
             return menu()
-        graficar_grafo(grafo, coords, root, meta)
         camino, padres = busquedaProfundidad(grafo, root, meta)
 
     elif opcion == '5':
         meta = input("Nodo meta: ")
         if not validar_para("Costo Uniforme", grafo, coords, meta):
             return menu()
-        graficar_grafo(grafo, coords, root, meta)
         camino, padres = busquedaCostoUniforme(grafo, root, meta)
 
     elif opcion == '6':
         meta = input("Nodo meta: ")
         if not validar_para("A*", grafo, coords, meta):
             return menu()
-        graficar_grafo(grafo, coords, root, meta)
+        
         camino, padres = busquedaAEstrella(grafo, coords, root, meta)
 
     else:
@@ -508,7 +460,6 @@ def menu():
         return
 
     if camino:
-        graficar_arbol_exploracion(padres, coords, root, meta)
         graficar_grafo_con_ruta(grafo, camino, coords, root, meta)
         print("Camino encontrado: " + " -> ".join(camino))
     else:
