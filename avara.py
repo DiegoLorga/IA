@@ -19,6 +19,8 @@ MAGENTA = "\033[95m"
 CYAN = "\033[96m"
 BOLD = "\033[1m"
 
+archivo_seleccionado = None
+
 
 def limpiar_pantalla():
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -73,14 +75,17 @@ def leer_grafo_desde_archivo(ruta):
     return grafo, coords
 
 
-def graficar_grafo(grafo, coords=None, root=None, meta=None):
+def graficar_grafo(grafo, coords, root=None, meta=None):
+    if coords is None:
+        raise ValueError("Se requieren coordenadas fijas para graficar el grafo de forma consistente.")
+
     G = nx.Graph()
     for u, vecinos in grafo.items():
         for v, w in vecinos:
             if not G.has_edge(u, v):
                 G.add_edge(u, v, weight=w)
 
-    pos = coords if coords else nx.spring_layout(G)
+    pos = coords  # Se usan solo las coordenadas dadas
 
     fig, ax = plt.subplots(figsize=(8, 6))
     ax.clear()
@@ -97,21 +102,19 @@ def graficar_grafo(grafo, coords=None, root=None, meta=None):
     nx.draw_networkx_nodes(G, pos, node_color=node_colors, node_size=600, ax=ax)
     nx.draw_networkx_labels(G, pos, font_size=10, ax=ax)
 
-    if coords:
-        offset = 0.15
-        coord_labels = {n: f"({x:.1f}, {y:.1f})" for n, (x, y) in coords.items()}
-        pos_coords = {n: (x, y - offset) for n, (x, y) in pos.items()}
-        nx.draw_networkx_labels(G, pos_coords, labels=coord_labels, font_size=8, font_color='gray', ax=ax)
+    # Coordenadas en gris bajo cada nodo
+    offset = 0.15
+    coord_labels = {n: f"({x:.1f}, {y:.1f})" for n, (x, y) in coords.items()}
+    pos_coords = {n: (x, y - offset) for n, (x, y) in pos.items()}
+    nx.draw_networkx_labels(G, pos_coords, labels=coord_labels, font_size=8, font_color='gray', ax=ax)
 
     nx.draw_networkx_edges(G, pos, ax=ax)
-    peso = nx.get_edge_attributes(G, 'weight')
-    if any(w != 1.0 for w in peso.values()):
-        nx.draw_networkx_edge_labels(G, pos, edge_labels=peso, ax=ax)
+    pesos = nx.get_edge_attributes(G, 'weight')
+    if any(w != 1.0 for w in pesos.values()):
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=pesos, ax=ax)
 
-    title = "Grafo"
-    if coords:
-        title += " con Coordenadas"
-    if any(w != 1.0 for w in peso.values()):
+    title = "Grafo con Coordenadas"
+    if any(w != 1.0 for w in pesos.values()):
         title += " y Pesos"
     if root:
         title += f" (Raíz: {root})"
@@ -120,15 +123,17 @@ def graficar_grafo(grafo, coords=None, root=None, meta=None):
 
     mostrar_imagen_en_tkinter(fig, titulo=title)
 
-    
-def graficar_grafo_con_ruta(grafo, camino, coords=None, root=None, meta=None):
+def graficar_grafo_con_ruta(grafo, camino, coords, root=None, meta=None):
+    if coords is None:
+        raise ValueError("Se requieren coordenadas fijas para graficar el grafo de forma consistente.")
+
     G = nx.Graph()
     for u, vecinos in grafo.items():
         for v, w in vecinos:
             if not G.has_edge(u, v):
                 G.add_edge(u, v, weight=w)
 
-    pos = coords if coords else nx.spring_layout(G)
+    pos = coords  # Solo se usan las coordenadas proporcionadas
 
     fig, ax = plt.subplots(figsize=(8, 6))
     ax.clear()
@@ -144,6 +149,7 @@ def graficar_grafo_con_ruta(grafo, camino, coords=None, root=None, meta=None):
         else:
             node_colors.append('lightblue')
 
+    # Aristas resaltadas para el camino encontrado
     edges_resaltadas = []
     if camino:
         for i in range(len(camino) - 1):
@@ -154,23 +160,31 @@ def graficar_grafo_con_ruta(grafo, camino, coords=None, root=None, meta=None):
     nx.draw_networkx_nodes(G, pos, node_color=node_colors, node_size=600, ax=ax)
     nx.draw_networkx_labels(G, pos, font_size=10, ax=ax)
 
-    if coords:
-        offset = 0.15
-        coord_labels = {n: f"({x:.1f}, {y:.1f})" for n, (x, y) in coords.items()}
-        pos_coords = {n: (x, y - offset) for n, (x, y) in pos.items()}
-        nx.draw_networkx_labels(G, pos_coords, labels=coord_labels, font_size=8, font_color='gray', ax=ax)
+    # Coordenadas en gris bajo cada nodo
+    offset = 0.15
+    coord_labels = {n: f"({x:.1f}, {y:.1f})" for n, (x, y) in coords.items()}
+    pos_coords = {n: (x, y - offset) for n, (x, y) in pos.items()}
+    nx.draw_networkx_labels(G, pos_coords, labels=coord_labels, font_size=8, font_color='gray', ax=ax)
 
+    # Dibujo de todas las aristas con transparencia, y las del camino resaltadas
     nx.draw_networkx_edges(G, pos, alpha=0.4, ax=ax)
     nx.draw_networkx_edges(G, pos, edgelist=edges_resaltadas, edge_color='blue', width=2.5, ax=ax)
 
+    # Pesos en aristas si no son todos 1.0
     pesos = nx.get_edge_attributes(G, 'weight')
     if any(w != 1.0 for w in pesos.values()):
         nx.draw_networkx_edge_labels(G, pos, edge_labels=pesos, ax=ax)
 
-    ax.set_title("Ruta encontrada sobre el grafo")
+    title = "Ruta encontrada sobre el grafo"
+    if root:
+        title += f" (Raíz: {root})"
+    if meta:
+        title += f" → Meta: {meta}"
+    ax.set_title(title)
     ax.axis('off')
 
-    mostrar_imagen_en_tkinter(fig, titulo="Ruta encontrada")
+    mostrar_imagen_en_tkinter(fig, titulo=title)
+
 
 
 def mostrar_imagen_en_tkinter(fig, titulo="Visualización del grafo"):
@@ -500,85 +514,91 @@ def ventana_seleccion():
 
 def menu():
     global archivo_seleccionado
-    # Mostrar ventana gráfica de selección
-    ventana_seleccion()
 
-    # Si no se seleccionó archivo, terminar
-    if not archivo_seleccionado:
-        print("No se seleccionó ningún archivo. Saliendo.")
-        return
+    while True:
+        # Si no se ha seleccionado archivo aún, pedirlo
+        if not archivo_seleccionado:
+            ventana_seleccion()
+            if not archivo_seleccionado:
+                print("No se seleccionó ningún archivo. Saliendo.")
+                return
 
-    # Leer grafo desde el archivo seleccionado
-    grafo, coords= leer_grafo_desde_archivo(archivo_seleccionado)
-    graficar_grafo(grafo, coords)
-    
-    root = input("Nodo raíz: ")
-    meta = input("Nodo meta: ")
-    #subprocess.run(["xdg-open", "grafo_inicial.png"])
+            grafo, coords = leer_grafo_desde_archivo(archivo_seleccionado)
+            graficar_grafo(grafo, coords)
 
-    print(f"\n{BOLD}{CYAN}=== MENÚ DE BÚSQUEDAS ==={RESET}")
-    print(f"{YELLOW}1.{RESET} {GREEN}Búsqueda en Anchura (BFS){RESET}")
-    print(f"{YELLOW}2.{RESET} {GREEN}Profundización Iterativa (IDDFS){RESET}")
-    print(f"{YELLOW}3.{RESET} {GREEN}Búsqueda Ávara{RESET}")
-    print(f"{YELLOW}4.{RESET} {GREEN}Búsqueda en Profundidad{RESET}")
-    print(f"{YELLOW}5.{RESET} {GREEN}Búsqueda de Costo Uniforme{RESET}")
-    print(f"{YELLOW}6.{RESET} {GREEN}Búsqueda A*{RESET}")
-    print(f"{YELLOW}0.{RESET} {RED}Salir{RESET}")
-    opcion = input(f"{BOLD}Elige una opción: {RESET}")
+        # Pedir nodo raíz y nodo meta
+        root = input("Nodo raíz: ")
+        meta = input("Nodo meta: ")
 
+        # Mostrar opciones
+        print(f"\n{BOLD}{CYAN}=== MENÚ DE BÚSQUEDAS ==={RESET}")
+        print(f"{YELLOW}1.{RESET} {GREEN}Búsqueda en Anchura (BFS){RESET}")
+        print(f"{YELLOW}2.{RESET} {GREEN}Profundización Iterativa (IDDFS){RESET}")
+        print(f"{YELLOW}3.{RESET} {GREEN}Búsqueda Ávara{RESET}")
+        print(f"{YELLOW}4.{RESET} {GREEN}Búsqueda en Profundidad{RESET}")
+        print(f"{YELLOW}5.{RESET} {GREEN}Búsqueda de Costo Uniforme{RESET}")
+        print(f"{YELLOW}6.{RESET} {GREEN}Búsqueda A*{RESET}")
+        print(f"{YELLOW}0.{RESET} {RED}Salir{RESET}")
+        opcion = input(f"{BOLD}Elige una opción: {RESET}")
 
+        # Salir si se elige 0
+        if opcion == '0':
+            print("Saliendo...")
+            break
 
-    camino, padres = None, None
+        camino, padres, costo = None, None, None
 
-    if opcion == '1':
-        if not validar_para("BFS", grafo, coords, meta):
-            return menu()
-        camino, costo, padres = busquedaAmplitud(grafo, root, meta)
+        # Ejecutar la búsqueda elegida
+        if opcion == '1':
+            if not validar_para("BFS", grafo, coords, meta):
+                continue
+            camino, costo, padres = busquedaAmplitud(grafo, root, meta)
 
-    elif opcion == '2':
-        if not validar_para("IDDFS", grafo, coords, meta):
-            return menu()
-        profundidad = int(input("Profundidad máxima [10]: ") or 10)
-        camino, padres, costo = busquedaProfundidadIterativa(grafo, root, meta, profundidad)
-        costo= len(costo)-2
-    elif opcion == '3':
-        if not validar_para("Ávara", grafo, coords, meta):
-            return menu()
-        camino, costo, padres = busquedaAvara(grafo, coords, root, meta)
+        elif opcion == '2':
+            if not validar_para("IDDFS", grafo, coords, meta):
+                continue
+            profundidad = int(input("Profundidad máxima [10]: ") or 10)
+            camino, padres, costo = busquedaProfundidadIterativa(grafo, root, meta, profundidad)
+            costo = len(costo) - 2
 
-    elif opcion == '4':
-        if not validar_para("DFS", grafo, coords, meta):
-            return menu()
-        camino, costo, padres = busquedaProfundidad(grafo, root, meta)
+        elif opcion == '3':
+            if not validar_para("Ávara", grafo, coords, meta):
+                continue
+            camino, costo, padres = busquedaAvara(grafo, coords, root, meta)
 
-    elif opcion == '5':
-        if not validar_para("Costo Uniforme", grafo, coords, meta):
-            return menu()
-        camino, costo, padres = busquedaCostoUniforme(grafo, root, meta)
+        elif opcion == '4':
+            if not validar_para("DFS", grafo, coords, meta):
+                continue
+            camino, costo, padres = busquedaProfundidad(grafo, root, meta)
 
-    elif opcion == '6':
-        if not validar_para("A*", grafo, coords, meta):
-            return menu()
-        camino, costo, padres = busquedaAEstrella(grafo, coords, root, meta)
+        elif opcion == '5':
+            if not validar_para("Costo Uniforme", grafo, coords, meta):
+                continue
+            camino, costo, padres = busquedaCostoUniforme(grafo, root, meta)
 
-    else:
-        print("Saliendo...")
-        return
+        elif opcion == '6':
+            if not validar_para("A*", grafo, coords, meta):
+                continue
+            camino, costo, padres = busquedaAEstrella(grafo, coords, root, meta)
 
-    if camino:
-        graficar_grafo_con_ruta(grafo, camino, coords, root, meta)
-        #subprocess.run(["xdg-open", "grafo_final.png"])
-        print("Camino encontrado: " + " -> ".join(camino))
-        if costo:
-            print("Costo", costo)
         else:
-            print ("No se encntró costo")
-    else:
-        print("No se encontró camino.")
+            print("Opción inválida.")
+            continue
 
-    input("\nPresiona Enter para continuar...")
-    limpiar_pantalla()
-    menu()
+        # Mostrar resultados
+        if camino:
+            graficar_grafo_con_ruta(grafo, camino, coords, root, meta)
+            print("Camino encontrado: " + " -> ".join(camino))
+            if costo:
+                print(f"Costo: {costo:.2f}")
+            else:
+                print("No se encontró costo.")
+        else:
+            print("No se encontró camino.")
+
+        input("\nPresiona Enter para continuar...")
+        limpiar_pantalla()
+
 
 
 if __name__ == '__main__':
