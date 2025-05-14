@@ -1,3 +1,4 @@
+ROOT: A 
 
 NODE_COORDS:
 A: (0, 0)
