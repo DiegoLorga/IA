@@ -317,9 +317,7 @@ def busquedaProfundidad(grafo, inicio, meta):
     return None, padres
 
 def busquedaCostoUniforme(grafo, inicio, meta):
-    import heapq
-
-    frontera = [(0, inicio)]  # (costo acumulado, nodo)
+    frontera = [(0, inicio)]
     padres = {inicio: None}
     costos = {inicio: 0}
     visitados = set()
@@ -336,6 +334,7 @@ def busquedaCostoUniforme(grafo, inicio, meta):
             while nodo:
                 camino.insert(0, nodo)
                 nodo = padres[nodo]
+            print("\nCosto total del camino:", costo_actual)
             return camino, padres
 
         visitados.add(nodo)
@@ -349,18 +348,20 @@ def busquedaCostoUniforme(grafo, inicio, meta):
 
     return None, padres
 
+
 def busquedaAEstrella(grafo, coords, inicio, meta):
-    """Búsqueda A* (A estrella) con heurística euclidiana."""
     def h(n):
         if n not in coords or meta not in coords:
             raise ValueError(f"No hay coordenadas para {n} o {meta}")
         x1, y1 = coords[n]; x2, y2 = coords[meta]
         return math.hypot(x2 - x1, y2 - y1)
 
-    frontera = [(0, inicio)]  # (costo acumulado, nodo)
+    frontera = [(0, inicio)]
     padres = {inicio: None}
     costos = {inicio: 0}
     visitados = set()
+
+    tabla = []
 
     while frontera:
         frontera.sort(key=lambda x: costos[x[1]] + h(x[1]))
@@ -369,11 +370,21 @@ def busquedaAEstrella(grafo, coords, inicio, meta):
         if nodo in visitados:
             continue
 
+        f_n = round(costos[nodo] + h(nodo), 2)
+        tabla.append((nodo, round(costos[nodo], 2), round(h(nodo), 2), f_n))
+
         if nodo == meta:
             camino = []
             while nodo:
                 camino.insert(0, nodo)
                 nodo = padres[nodo]
+
+            # Imprimir tabla
+            print("\nTabla de nodos expandido en A*:")
+            print(f"{'Nodo':<8}{'g(n)':<8}{'h(n)':<8}{'f(n)':<8}")
+            for fila in tabla:
+                print(f"{fila[0]:<8}{fila[1]:<8}{fila[2]:<8}{fila[3]:<8}")
+            print("Costo total del camino:", costos[meta])
             return camino, padres
 
         visitados.add(nodo)
@@ -387,6 +398,7 @@ def busquedaAEstrella(grafo, coords, inicio, meta):
                     frontera.append((nuevo_costo, vecino))
 
     return None, padres
+
 
 def validar_para(algoritmo, grafo, coords, meta):
     if meta not in grafo:
