@@ -510,9 +510,10 @@ def menu():
 
     # Leer grafo desde el archivo seleccionado
     grafo, coords= leer_grafo_desde_archivo(archivo_seleccionado)
+    graficar_grafo(grafo, coords)
+    
     root = input("Nodo raíz: ")
     meta = input("Nodo meta: ")
-    graficar_grafo(grafo, coords)
     #subprocess.run(["xdg-open", "grafo_inicial.png"])
 
     print(f"\n{BOLD}{CYAN}=== MENÚ DE BÚSQUEDAS ==={RESET}")
